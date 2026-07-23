@@ -1,5 +1,6 @@
 "use client";
 
+import AIResumeCoach from "@/components/AIResumeCoach";
 import AnalysisResults from "@/components/AnalysisResults";
 import { analyzeResume } from "@/lib/analysis/analyzer";
 import { parseDocument } from "@/lib/parser";
@@ -274,6 +275,9 @@ export default function Home() {
   const [jobDescriptionFile, setJobDescriptionFile] =
     useState<File | null>(null);
 
+  const [resumeText, setResumeText] = useState("");
+  const [jobDescriptionText, setJobDescriptionText] = useState("");
+
   const [statusMessage, setStatusMessage] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
@@ -282,6 +286,14 @@ export default function Home() {
     useState<AnalysisResult | null>(null);
 
   const isReady = Boolean(resumeFile && jobDescriptionFile);
+
+  function resetAnalysis() {
+    setResumeText("");
+    setJobDescriptionText("");
+    setStatusMessage("");
+    setAnalysisError("");
+    setAnalysisResult(null);
+  }
 
   async function handleAnalyze() {
     if (!resumeFile || !jobDescriptionFile) {
@@ -296,6 +308,8 @@ export default function Home() {
       setAnalysisError("");
       setStatusMessage("");
       setAnalysisResult(null);
+      setResumeText("");
+      setJobDescriptionText("");
 
       const [resume, jobDescription] = await Promise.all([
         parseDocument(resumeFile),
@@ -311,6 +325,8 @@ export default function Home() {
       console.log("Parsed job description:", jobDescription);
       console.log("Analysis:", analysis);
 
+      setResumeText(resume.text);
+      setJobDescriptionText(jobDescription.text);
       setAnalysisResult(analysis);
 
       setStatusMessage(
@@ -319,6 +335,8 @@ export default function Home() {
     } catch (error) {
       console.error("Document analysis error:", error);
 
+      setResumeText("");
+      setJobDescriptionText("");
       setAnalysisResult(null);
 
       setAnalysisError(
@@ -400,9 +418,7 @@ export default function Home() {
                 icon={<DocumentIcon />}
                 onFileSelect={(file) => {
                   setResumeFile(file);
-                  setStatusMessage("");
-                  setAnalysisError("");
-                  setAnalysisResult(null);
+                  resetAnalysis();
                 }}
               />
 
@@ -413,9 +429,7 @@ export default function Home() {
                 icon={<BriefcaseIcon />}
                 onFileSelect={(file) => {
                   setJobDescriptionFile(file);
-                  setStatusMessage("");
-                  setAnalysisError("");
-                  setAnalysisResult(null);
+                  resetAnalysis();
                 }}
               />
             </div>
@@ -463,7 +477,15 @@ export default function Home() {
           </div>
 
           {analysisResult && (
-            <AnalysisResults analysis={analysisResult} />
+            <>
+              <AnalysisResults analysis={analysisResult} />
+
+              <AIResumeCoach
+                resumeText={resumeText}
+                jobDescriptionText={jobDescriptionText}
+                analysis={analysisResult}
+              />
+            </>
           )}
         </div>
       </section>
