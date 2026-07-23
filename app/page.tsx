@@ -1,5 +1,9 @@
 "use client";
-import { parseDocument } from "@/lib/parser"; 
+
+import AnalysisResults from "@/components/AnalysisResults";
+import { analyzeResume } from "@/lib/analysis/analyzer";
+import { parseDocument } from "@/lib/parser";
+import type { AnalysisResult } from "@/types/analysis";
 import {
   ChangeEvent,
   DragEvent,
@@ -95,8 +99,13 @@ function UploadBox({
   return (
     <section>
       <div className="mb-3">
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+        <h2 className="text-lg font-semibold text-slate-900">
+          {title}
+        </h2>
+
+        <p className="mt-1 text-sm leading-6 text-slate-600">
+          {description}
+        </p>
       </div>
 
       <div
@@ -153,9 +162,11 @@ function UploadBox({
             <p className="mt-5 max-w-full truncate font-semibold text-slate-900">
               {file.name}
             </p>
+
             <p className="mt-1 text-sm text-slate-600">
               {formatFileSize(file.size)}
             </p>
+
             <p className="mt-4 text-sm font-medium text-teal-700">
               File ready. Click to replace it.
             </p>
@@ -165,9 +176,14 @@ function UploadBox({
             <p className="mt-5 font-semibold text-slate-900">
               Drag and drop your file here
             </p>
+
             <p className="mt-2 text-sm text-slate-600">
-              or <span className="font-semibold text-blue-700">browse files</span>
+              or{" "}
+              <span className="font-semibold text-blue-700">
+                browse files
+              </span>
             </p>
+
             <p className="mt-4 text-xs font-medium uppercase tracking-wider text-slate-500">
               PDF, DOCX or TXT · Maximum 10 MB
             </p>
@@ -176,7 +192,10 @@ function UploadBox({
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 text-sm font-medium text-red-600">
+        <p
+          role="alert"
+          className="mt-3 text-sm font-medium text-red-600"
+        >
           {error}
         </p>
       )}
@@ -251,61 +270,85 @@ function ShieldIcon() {
 
 export default function Home() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-const [jobDescriptionFile, setJobDescriptionFile] =
-  useState<File | null>(null);
-const [statusMessage, setStatusMessage] = useState("");
-const [isAnalyzing, setIsAnalyzing] = useState(false);
-const [analysisError, setAnalysisError] = useState("");
+
+  const [jobDescriptionFile, setJobDescriptionFile] =
+    useState<File | null>(null);
+
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+
+  const [analysisResult, setAnalysisResult] =
+    useState<AnalysisResult | null>(null);
+
   const isReady = Boolean(resumeFile && jobDescriptionFile);
 
+  async function handleAnalyze() {
+    if (!resumeFile || !jobDescriptionFile) {
+      setAnalysisError(
+        "Please upload both a resume and a job description.",
+      );
+      return;
+    }
 
-    async function handleAnalyze() {
-  if (!resumeFile || !jobDescriptionFile) {
-    setAnalysisError(
-      "Please upload both a resume and a job description.",
-    );
-    return;
+    try {
+      setIsAnalyzing(true);
+      setAnalysisError("");
+      setStatusMessage("");
+      setAnalysisResult(null);
+
+      const [resume, jobDescription] = await Promise.all([
+        parseDocument(resumeFile),
+        parseDocument(jobDescriptionFile),
+      ]);
+
+      const analysis = analyzeResume(
+        resume.text,
+        jobDescription.text,
+      );
+
+      console.log("Parsed resume:", resume);
+      console.log("Parsed job description:", jobDescription);
+      console.log("Analysis:", analysis);
+
+      setAnalysisResult(analysis);
+
+      setStatusMessage(
+        "Both documents were processed successfully.",
+      );
+    } catch (error) {
+      console.error("Document analysis error:", error);
+
+      setAnalysisResult(null);
+
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "Unable to process the uploaded documents.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
   }
 
-  try {
-    setIsAnalyzing(true);
-    setAnalysisError("");
-    setStatusMessage("");
-
-    const [resume, jobDescription] = await Promise.all([
-      parseDocument(resumeFile),
-      parseDocument(jobDescriptionFile),
-    ]);
-
-    console.log("Parsed resume:", resume);
-    console.log("Parsed job description:", jobDescription);
-
-    setStatusMessage(
-      "Both documents were processed successfully.",
-    );
-  } catch (error) {
-    console.error("Document analysis error:", error);
-
-    setAnalysisError(
-      error instanceof Error
-        ? error.message
-        : "Unable to process the uploaded documents.",
-    );
-  } finally {
-    setIsAnalyzing(false);
-  }
-}
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <a href="#" className="flex items-center gap-3" aria-label="CareerLauncher home">
+          <a
+            href="#"
+            className="flex items-center gap-3"
+            aria-label="CareerLauncher home"
+          >
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-sm">
               <RocketIcon />
             </div>
 
             <div>
-              <p className="text-lg font-bold tracking-tight">CareerLauncher</p>
+              <p className="text-lg font-bold tracking-tight">
+                CareerLauncher
+              </p>
+
               <p className="text-xs text-slate-500">
                 Career Readiness Toolkit
               </p>
@@ -330,12 +373,15 @@ const [analysisError, setAnalysisError] = useState("");
 
             <h1 className="mt-7 text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl">
               Launch your career
-              <span className="block text-blue-600">with confidence.</span>
+              <span className="block text-blue-600">
+                with confidence.
+              </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Compare your resume with a job description and receive clear,
-              educational guidance to help you improve your application.
+              Compare your resume with a job description and receive
+              clear, educational guidance to help you improve your
+              application.
             </p>
 
             <div className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-medium text-slate-600">
@@ -348,39 +394,46 @@ const [analysisError, setAnalysisError] = useState("");
           <div className="mx-auto mt-14 max-w-5xl rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
             <div className="grid gap-8 lg:grid-cols-2">
               <UploadBox
-  title="Upload your resume"
-  description="Choose the resume you want to compare with the role."
-  file={resumeFile}
-  icon={<DocumentIcon />}
-  onFileSelect={(file) => {
-    setResumeFile(file);
-    setStatusMessage("");
-    setAnalysisError("");
-  }}
-/>
+                title="Upload your resume"
+                description="Choose the resume you want to compare with the role."
+                file={resumeFile}
+                icon={<DocumentIcon />}
+                onFileSelect={(file) => {
+                  setResumeFile(file);
+                  setStatusMessage("");
+                  setAnalysisError("");
+                  setAnalysisResult(null);
+                }}
+              />
 
               <UploadBox
-  title="Upload the job description"
-  description="Upload the position description or list of job requirements."
-  file={jobDescriptionFile}
-  icon={<BriefcaseIcon />}
-  onFileSelect={(file) => {
-    setJobDescriptionFile(file);
-    setStatusMessage("");
-    setAnalysisError("");
-  }}
-/>
+                title="Upload the job description"
+                description="Upload the position description or list of job requirements."
+                file={jobDescriptionFile}
+                icon={<BriefcaseIcon />}
+                onFileSelect={(file) => {
+                  setJobDescriptionFile(file);
+                  setStatusMessage("");
+                  setAnalysisError("");
+                  setAnalysisResult(null);
+                }}
+              />
             </div>
 
             <div className="mt-8 border-t border-slate-200 pt-7">
               <button
-  type="button"
-  disabled={!isReady || isAnalyzing}
-  onClick={handleAnalyze}
+                type="button"
+                disabled={!isReady || isAnalyzing}
+                onClick={handleAnalyze}
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:text-lg"
               >
-                {isAnalyzing ? "Processing documents..." : "Analyze my resume"}
-{!isAnalyzing && <span aria-hidden="true">→</span>}
+                {isAnalyzing
+                  ? "Processing documents..."
+                  : "Analyze my resume"}
+
+                {!isAnalyzing && (
+                  <span aria-hidden="true">→</span>
+                )}
               </button>
 
               {!isReady && (
@@ -388,14 +441,16 @@ const [analysisError, setAnalysisError] = useState("");
                   Upload both documents to begin your analysis.
                 </p>
               )}
-{analysisError && (
-  <div
-    role="alert"
-    className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700"
-  >
-    {analysisError}
-  </div>
-)}
+
+              {analysisError && (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700"
+                >
+                  {analysisError}
+                </div>
+              )}
+
               {statusMessage && (
                 <div
                   role="status"
@@ -406,6 +461,10 @@ const [analysisError, setAnalysisError] = useState("");
               )}
             </div>
           </div>
+
+          {analysisResult && (
+            <AnalysisResults analysis={analysisResult} />
+          )}
         </div>
       </section>
 
@@ -416,11 +475,13 @@ const [analysisError, setAnalysisError] = useState("");
             title="Upload"
             description="Add your resume and the job description you are targeting."
           />
+
           <FeatureCard
             number="02"
             title="Understand"
             description="See where your experience aligns and where you can improve."
           />
+
           <FeatureCard
             number="03"
             title="Prepare"
@@ -432,10 +493,13 @@ const [analysisError, setAnalysisError] = useState("");
       <footer className="bg-slate-950 text-slate-300">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-semibold text-white">CareerLauncher</p>
+            <p className="font-semibold text-white">
+              CareerLauncher
+            </p>
+
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-400">
-              A free educational tool that encourages students to represent
-              their skills and experience honestly.
+              A free educational tool that encourages students to
+              represent their skills and experience honestly.
             </p>
           </div>
 
@@ -460,9 +524,17 @@ function FeatureCard({
 }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-      <span className="text-sm font-bold text-blue-600">{number}</span>
-      <h2 className="mt-4 text-xl font-semibold text-slate-900">{title}</h2>
-      <p className="mt-2 leading-7 text-slate-600">{description}</p>
+      <span className="text-sm font-bold text-blue-600">
+        {number}
+      </span>
+
+      <h2 className="mt-4 text-xl font-semibold text-slate-900">
+        {title}
+      </h2>
+
+      <p className="mt-2 leading-7 text-slate-600">
+        {description}
+      </p>
     </article>
   );
 }
