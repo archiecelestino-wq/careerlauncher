@@ -30,8 +30,16 @@ type UploadBoxProps = {
 };
 
 function validateFile(file: File): string | null {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  const allowedExtensions = ["pdf", "docx", "txt"];
+  const extension = file.name
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+
+  const allowedExtensions = [
+    "pdf",
+    "docx",
+    "txt",
+  ];
 
   if (
     !ALLOWED_FILE_TYPES.includes(file.type) &&
@@ -56,7 +64,9 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
 
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024)).toFixed(
+    1,
+  )} MB`;
 }
 
 function UploadBox({
@@ -66,16 +76,23 @@ function UploadBox({
   icon,
   onFileSelect,
 }: UploadBoxProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const inputRef =
+    useRef<HTMLInputElement>(null);
+
+  const [isDragging, setIsDragging] =
+    useState(false);
+
   const [error, setError] = useState("");
 
-  function processFile(selectedFile: File | undefined) {
+  function processFile(
+    selectedFile: File | undefined,
+  ) {
     if (!selectedFile) {
       return;
     }
 
-    const validationError = validateFile(selectedFile);
+    const validationError =
+      validateFile(selectedFile);
 
     if (validationError) {
       setError(validationError);
@@ -86,15 +103,22 @@ function UploadBox({
     onFileSelect(selectedFile);
   }
 
-  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+  function handleInputChange(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
     processFile(event.target.files?.[0]);
     event.target.value = "";
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(
+    event: DragEvent<HTMLDivElement>,
+  ) {
     event.preventDefault();
     setIsDragging(false);
-    processFile(event.dataTransfer.files?.[0]);
+
+    processFile(
+      event.dataTransfer.files?.[0],
+    );
   }
 
   return (
@@ -113,9 +137,14 @@ function UploadBox({
         role="button"
         tabIndex={0}
         aria-label={`Upload ${title}`}
-        onClick={() => inputRef.current?.click()}
+        onClick={() =>
+          inputRef.current?.click()
+        }
         onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
+          if (
+            event.key === "Enter" ||
+            event.key === " "
+          ) {
             inputRef.current?.click();
           }
         }}
@@ -270,36 +299,63 @@ function ShieldIcon() {
 }
 
 export default function Home() {
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-
-  const [jobDescriptionFile, setJobDescriptionFile] =
+  const [resumeFile, setResumeFile] =
     useState<File | null>(null);
 
-  const [resumeText, setResumeText] = useState("");
-  const [jobDescriptionText, setJobDescriptionText] = useState("");
+  const [
+    jobDescriptionFile,
+    setJobDescriptionFile,
+  ] = useState<File | null>(null);
 
-  const [statusMessage, setStatusMessage] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisError, setAnalysisError] = useState("");
+  const [resumeText, setResumeText] =
+    useState("");
 
-  const [analysisResult, setAnalysisResult] =
-    useState<AnalysisResult | null>(null);
+  const [
+    jobDescriptionText,
+    setJobDescriptionText,
+  ] = useState("");
 
-  const isReady = Boolean(resumeFile && jobDescriptionFile);
+  const [
+    revisedResumeText,
+    setRevisedResumeText,
+  ] = useState("");
+
+  const [statusMessage, setStatusMessage] =
+    useState("");
+
+  const [isAnalyzing, setIsAnalyzing] =
+    useState(false);
+
+  const [analysisError, setAnalysisError] =
+    useState("");
+
+  const [
+    analysisResult,
+    setAnalysisResult,
+  ] = useState<AnalysisResult | null>(null);
+
+  const isReady = Boolean(
+    resumeFile && jobDescriptionFile,
+  );
 
   function resetAnalysis() {
     setResumeText("");
     setJobDescriptionText("");
+    setRevisedResumeText("");
     setStatusMessage("");
     setAnalysisError("");
     setAnalysisResult(null);
   }
 
   async function handleAnalyze() {
-    if (!resumeFile || !jobDescriptionFile) {
+    if (
+      !resumeFile ||
+      !jobDescriptionFile
+    ) {
       setAnalysisError(
         "Please upload both a resume and a job description.",
       );
+
       return;
     }
 
@@ -310,33 +366,53 @@ export default function Home() {
       setAnalysisResult(null);
       setResumeText("");
       setJobDescriptionText("");
+      setRevisedResumeText("");
 
-      const [resume, jobDescription] = await Promise.all([
-        parseDocument(resumeFile),
-        parseDocument(jobDescriptionFile),
-      ]);
+      const [resume, jobDescription] =
+        await Promise.all([
+          parseDocument(resumeFile),
+          parseDocument(
+            jobDescriptionFile,
+          ),
+        ]);
 
       const analysis = analyzeResume(
         resume.text,
         jobDescription.text,
       );
 
-      console.log("Parsed resume:", resume);
-      console.log("Parsed job description:", jobDescription);
+      console.log(
+        "Parsed resume:",
+        resume,
+      );
+
+      console.log(
+        "Parsed job description:",
+        jobDescription,
+      );
+
       console.log("Analysis:", analysis);
 
       setResumeText(resume.text);
-      setJobDescriptionText(jobDescription.text);
+
+      setJobDescriptionText(
+        jobDescription.text,
+      );
+
       setAnalysisResult(analysis);
 
       setStatusMessage(
         "Both documents were processed successfully.",
       );
     } catch (error) {
-      console.error("Document analysis error:", error);
+      console.error(
+        "Document analysis error:",
+        error,
+      );
 
       setResumeText("");
       setJobDescriptionText("");
+      setRevisedResumeText("");
       setAnalysisResult(null);
 
       setAnalysisError(
@@ -347,6 +423,19 @@ export default function Home() {
     } finally {
       setIsAnalyzing(false);
     }
+  }
+
+  function handleRevisedResumeSubmit(
+    revisedResume: string,
+  ) {
+    setRevisedResumeText(
+      revisedResume,
+    );
+
+    console.log(
+      "Revised resume saved:",
+      revisedResume,
+    );
   }
 
   return (
@@ -385,8 +474,12 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-8 sm:pt-24">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-medium text-blue-700 shadow-sm">
-              <span aria-hidden="true">🎓</span>
-              Built to help students launch stronger careers
+              <span aria-hidden="true">
+                🎓
+              </span>
+
+              Built to help students launch
+              stronger careers
             </div>
 
             <h1 className="mt-7 text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl">
@@ -397,15 +490,18 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Compare your resume with a job description and receive
-              clear, educational guidance to help you improve your
-              application.
+              Compare your resume with a job
+              description and receive clear,
+              educational guidance to help you
+              improve your application.
             </p>
 
             <div className="mt-7 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-medium text-slate-600">
               <span>✓ No login</span>
               <span>✓ No API fees</span>
-              <span>✓ Your files stay private</span>
+              <span>
+                ✓ Your files stay private
+              </span>
             </div>
           </div>
 
@@ -428,7 +524,10 @@ export default function Home() {
                 file={jobDescriptionFile}
                 icon={<BriefcaseIcon />}
                 onFileSelect={(file) => {
-                  setJobDescriptionFile(file);
+                  setJobDescriptionFile(
+                    file,
+                  );
+
                   resetAnalysis();
                 }}
               />
@@ -437,7 +536,9 @@ export default function Home() {
             <div className="mt-8 border-t border-slate-200 pt-7">
               <button
                 type="button"
-                disabled={!isReady || isAnalyzing}
+                disabled={
+                  !isReady || isAnalyzing
+                }
                 onClick={handleAnalyze}
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:text-lg"
               >
@@ -446,13 +547,16 @@ export default function Home() {
                   : "Analyze my resume"}
 
                 {!isAnalyzing && (
-                  <span aria-hidden="true">→</span>
+                  <span aria-hidden="true">
+                    →
+                  </span>
                 )}
               </button>
 
               {!isReady && (
                 <p className="mt-3 text-center text-sm text-slate-500">
-                  Upload both documents to begin your analysis.
+                  Upload both documents to
+                  begin your analysis.
                 </p>
               )}
 
@@ -478,13 +582,35 @@ export default function Home() {
 
           {analysisResult && (
             <>
-              <AnalysisResults analysis={analysisResult} />
+              <AnalysisResults
+                analysis={analysisResult}
+              />
 
               <AIResumeCoach
                 resumeText={resumeText}
-                jobDescriptionText={jobDescriptionText}
+                jobDescriptionText={
+                  jobDescriptionText
+                }
                 analysis={analysisResult}
+                onRevisedResumeSubmit={
+                  handleRevisedResumeSubmit
+                }
               />
+
+              {revisedResumeText && (
+                <section className="mx-auto mt-6 max-w-5xl">
+                  <div
+                    role="status"
+                    className="rounded-3xl border border-teal-200 bg-teal-50 px-5 py-4 text-sm font-medium leading-6 text-teal-800"
+                  >
+                    Your revised resume is
+                    saved for this session. It
+                    will be used for the
+                    before-and-after review in
+                    the next step.
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>
@@ -520,8 +646,10 @@ export default function Home() {
             </p>
 
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-400">
-              A free educational tool that encourages students to
-              represent their skills and experience honestly.
+              A free educational tool that
+              encourages students to represent
+              their skills and experience
+              honestly.
             </p>
           </div>
 
@@ -573,7 +701,11 @@ function RocketIcon() {
     >
       <path d="M14.5 4.5c2.25-1.25 4.25-1 5-1-.05 1.65-.4 3.55-1.65 5.4l-5.5 5.5-4.75-4.75 5.5-5.5c.45-.45.9-.85 1.4-1.15Z" />
       <path d="m10.25 12-4.5.5-2.25 2.25 5.25.5M12 13.75l-.5 4.5-2.25 2.25-.5-5.25" />
-      <circle cx="15.75" cy="7.25" r="1.5" />
+      <circle
+        cx="15.75"
+        cy="7.25"
+        r="1.5"
+      />
       <path d="M6.5 17.5c-1.75.25-2.75 1.25-3 3 1.75-.25 2.75-1.25 3-3Z" />
     </svg>
   );
