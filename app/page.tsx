@@ -1,5 +1,5 @@
 "use client";
-
+import { parseDocument } from "@/lib/parser"; 
 import {
   ChangeEvent,
   DragEvent,
@@ -251,22 +251,50 @@ function ShieldIcon() {
 
 export default function Home() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [jobDescriptionFile, setJobDescriptionFile] =
-    useState<File | null>(null);
-  const [statusMessage, setStatusMessage] = useState("");
-
+const [jobDescriptionFile, setJobDescriptionFile] =
+  useState<File | null>(null);
+const [statusMessage, setStatusMessage] = useState("");
+const [isAnalyzing, setIsAnalyzing] = useState(false);
+const [analysisError, setAnalysisError] = useState("");
   const isReady = Boolean(resumeFile && jobDescriptionFile);
 
-  function handleAnalyze() {
-    if (!isReady) {
-      return;
-    }
 
-    setStatusMessage(
-      "Both documents are ready. Document analysis will be added in Sprint 2.",
+    async function handleAnalyze() {
+  if (!resumeFile || !jobDescriptionFile) {
+    setAnalysisError(
+      "Please upload both a resume and a job description.",
     );
+    return;
   }
 
+  try {
+    setIsAnalyzing(true);
+    setAnalysisError("");
+    setStatusMessage("");
+
+    const [resume, jobDescription] = await Promise.all([
+      parseDocument(resumeFile),
+      parseDocument(jobDescriptionFile),
+    ]);
+
+    console.log("Parsed resume:", resume);
+    console.log("Parsed job description:", jobDescription);
+
+    setStatusMessage(
+      "Both documents were processed successfully.",
+    );
+  } catch (error) {
+    console.error("Document analysis error:", error);
+
+    setAnalysisError(
+      error instanceof Error
+        ? error.message
+        : "Unable to process the uploaded documents.",
+    );
+  } finally {
+    setIsAnalyzing(false);
+  }
+}
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-200 bg-white">
@@ -320,37 +348,39 @@ export default function Home() {
           <div className="mx-auto mt-14 max-w-5xl rounded-[2rem] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
             <div className="grid gap-8 lg:grid-cols-2">
               <UploadBox
-                title="Upload your resume"
-                description="Choose the resume you want to compare with the role."
-                file={resumeFile}
-                icon={<DocumentIcon />}
-                onFileSelect={(file) => {
-                  setResumeFile(file);
-                  setStatusMessage("");
-                }}
-              />
+  title="Upload your resume"
+  description="Choose the resume you want to compare with the role."
+  file={resumeFile}
+  icon={<DocumentIcon />}
+  onFileSelect={(file) => {
+    setResumeFile(file);
+    setStatusMessage("");
+    setAnalysisError("");
+  }}
+/>
 
               <UploadBox
-                title="Upload the job description"
-                description="Upload the position description or list of job requirements."
-                file={jobDescriptionFile}
-                icon={<BriefcaseIcon />}
-                onFileSelect={(file) => {
-                  setJobDescriptionFile(file);
-                  setStatusMessage("");
-                }}
-              />
+  title="Upload the job description"
+  description="Upload the position description or list of job requirements."
+  file={jobDescriptionFile}
+  icon={<BriefcaseIcon />}
+  onFileSelect={(file) => {
+    setJobDescriptionFile(file);
+    setStatusMessage("");
+    setAnalysisError("");
+  }}
+/>
             </div>
 
             <div className="mt-8 border-t border-slate-200 pt-7">
               <button
-                type="button"
-                disabled={!isReady}
-                onClick={handleAnalyze}
+  type="button"
+  disabled={!isReady || isAnalyzing}
+  onClick={handleAnalyze}
                 className="flex min-h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:text-lg"
               >
-                Analyze my resume
-                <span aria-hidden="true">→</span>
+                {isAnalyzing ? "Processing documents..." : "Analyze my resume"}
+{!isAnalyzing && <span aria-hidden="true">→</span>}
               </button>
 
               {!isReady && (
@@ -358,7 +388,14 @@ export default function Home() {
                   Upload both documents to begin your analysis.
                 </p>
               )}
-
+{analysisError && (
+  <div
+    role="alert"
+    className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700"
+  >
+    {analysisError}
+  </div>
+)}
               {statusMessage && (
                 <div
                   role="status"
