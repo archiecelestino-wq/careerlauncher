@@ -1,3 +1,4 @@
+import ResponsibleUseNotice from "@/components/ResponsibleUseNotice";
 import type { AnalysisResult } from "@/types/analysis";
 
 type AnalysisResultsProps = {
@@ -225,12 +226,10 @@ export default function AnalysisResults({
             </ul>
           </article>
         </div>
+      </div>
 
-        <p className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-900">
-          This score is an educational estimate based on keyword alignment. It
-          is not a hiring prediction or a guarantee that an applicant will pass
-          an automated screening system.
-        </p>
+      <div className="mt-6">
+        <ResponsibleUseNotice variant="analysis" />
       </div>
     </section>
   );
