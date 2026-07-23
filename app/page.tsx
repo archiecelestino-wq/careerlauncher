@@ -2,6 +2,7 @@
 
 import AIResumeCoach from "@/components/AIResumeCoach";
 import AnalysisResults from "@/components/AnalysisResults";
+import ResumeImprovementComparison from "@/components/ResumeImprovementComparison";
 import { analyzeResume } from "@/lib/analysis/analyzer";
 import { parseDocument } from "@/lib/parser";
 import type { AnalysisResult } from "@/types/analysis";
@@ -320,6 +321,11 @@ export default function Home() {
     setRevisedResumeText,
   ] = useState("");
 
+  const [
+    revisedAnalysis,
+    setRevisedAnalysis,
+  ] = useState<AnalysisResult | null>(null);
+
   const [statusMessage, setStatusMessage] =
     useState("");
 
@@ -342,6 +348,7 @@ export default function Home() {
     setResumeText("");
     setJobDescriptionText("");
     setRevisedResumeText("");
+    setRevisedAnalysis(null);
     setStatusMessage("");
     setAnalysisError("");
     setAnalysisResult(null);
@@ -367,6 +374,7 @@ export default function Home() {
       setResumeText("");
       setJobDescriptionText("");
       setRevisedResumeText("");
+      setRevisedAnalysis(null);
 
       const [resume, jobDescription] =
         await Promise.all([
@@ -413,6 +421,7 @@ export default function Home() {
       setResumeText("");
       setJobDescriptionText("");
       setRevisedResumeText("");
+      setRevisedAnalysis(null);
       setAnalysisResult(null);
 
       setAnalysisError(
@@ -428,14 +437,82 @@ export default function Home() {
   function handleRevisedResumeSubmit(
     revisedResume: string,
   ) {
-    setRevisedResumeText(
-      revisedResume,
-    );
+    const cleanedRevisedResume =
+      revisedResume.trim();
 
-    console.log(
-      "Revised resume saved:",
-      revisedResume,
-    );
+    if (
+      !cleanedRevisedResume ||
+      !jobDescriptionText.trim()
+    ) {
+      setRevisedResumeText("");
+      setRevisedAnalysis(null);
+
+      setAnalysisError(
+        "The revised resume could not be validated because required document text is missing.",
+      );
+
+      return;
+    }
+
+    try {
+      setAnalysisError("");
+
+      const validationResult =
+        analyzeResume(
+          cleanedRevisedResume,
+          jobDescriptionText,
+        );
+
+      setRevisedResumeText(
+        cleanedRevisedResume,
+      );
+
+      setRevisedAnalysis(
+        validationResult,
+      );
+
+      setStatusMessage(
+        "Your revised resume was saved and validated successfully.",
+      );
+
+      console.log(
+        "Revised resume saved:",
+        cleanedRevisedResume,
+      );
+
+      console.log(
+        "Revised analysis:",
+        validationResult,
+      );
+
+      window.setTimeout(() => {
+        document
+          .getElementById(
+            "resume-improvement-title",
+          )
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      }, 100);
+    } catch (error) {
+      console.error(
+        "Revised resume validation error:",
+        error,
+      );
+
+      setRevisedResumeText(
+        cleanedRevisedResume,
+      );
+
+      setRevisedAnalysis(null);
+
+      setAnalysisError(
+        error instanceof Error
+          ? error.message
+          : "The revised resume was saved, but CareerLauncher could not validate it.",
+      );
+    }
   }
 
   return (
@@ -597,20 +674,13 @@ export default function Home() {
                 }
               />
 
-              {revisedResumeText && (
-                <section className="mx-auto mt-6 max-w-5xl">
-                  <div
-                    role="status"
-                    className="rounded-3xl border border-teal-200 bg-teal-50 px-5 py-4 text-sm font-medium leading-6 text-teal-800"
-                  >
-                    Your revised resume is
-                    saved for this session. It
-                    will be used for the
-                    before-and-after review in
-                    the next step.
-                  </div>
-                </section>
-              )}
+              {revisedResumeText &&
+                revisedAnalysis && (
+                  <ResumeImprovementComparison
+                    before={analysisResult}
+                    after={revisedAnalysis}
+                  />
+                )}
             </>
           )}
         </div>

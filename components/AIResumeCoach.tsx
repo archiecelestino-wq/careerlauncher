@@ -9,7 +9,9 @@ type AIResumeCoachProps = {
   resumeText: string;
   jobDescriptionText: string;
   analysis: AnalysisResult;
-  onRevisedResumeSubmit: (revisedResumeText: string) => void;
+  onRevisedResumeSubmit: (
+    revisedResumeText: string,
+  ) => void;
 };
 
 type StatusMessage = {
@@ -28,16 +30,9 @@ const REVISED_RESUME_START_MARKER =
 const REVISED_RESUME_END_MARKER =
   "===== REVISED RESUME END =====";
 
-/**
- * Extracts the rewritten resume from the complete ChatGPT response.
- *
- * When the expected markers are present, only the content between
- * the revised-resume markers is returned.
- *
- * When markers are not present, the complete pasted value is returned
- * so students can still paste a clean resume without the markers.
- */
-function extractRevisedResume(value: string): string {
+function extractRevisedResume(
+  value: string,
+): string {
   const trimmedValue = value.trim();
 
   const startIndex = trimmedValue.indexOf(
@@ -59,7 +54,8 @@ function extractRevisedResume(value: string): string {
 
   return trimmedValue
     .slice(
-      startIndex + REVISED_RESUME_START_MARKER.length,
+      startIndex +
+        REVISED_RESUME_START_MARKER.length,
       endIndex,
     )
     .trim();
@@ -71,43 +67,55 @@ export default function AIResumeCoach({
   analysis,
   onRevisedResumeSubmit,
 }: AIResumeCoachProps) {
-  const [generatedPrompt, setGeneratedPrompt] =
-    useState("");
+  const [
+    generatedPrompt,
+    setGeneratedPrompt,
+  ] = useState("");
 
   const [copyStatus, setCopyStatus] =
     useState<StatusMessage>(null);
 
-  const [generationError, setGenerationError] =
-    useState("");
+  const [
+    generationError,
+    setGenerationError,
+  ] = useState("");
 
-  const [revisedResumeInput, setRevisedResumeInput] =
-    useState("");
+  const [
+    revisedResumeInput,
+    setRevisedResumeInput,
+  ] = useState("");
 
-  const [revisedResumeStatus, setRevisedResumeStatus] =
-    useState<StatusMessage>(null);
+  const [
+    revisedResumeStatus,
+    setRevisedResumeStatus,
+  ] = useState<StatusMessage>(null);
 
-  const hasResumeText = resumeText.trim().length > 0;
+  const hasResumeText =
+    resumeText.trim().length > 0;
 
   const hasJobDescriptionText =
     jobDescriptionText.trim().length > 0;
 
   const canGeneratePrompt =
-    hasResumeText && hasJobDescriptionText;
+    hasResumeText &&
+    hasJobDescriptionText;
 
-  const promptCharacterCount = generatedPrompt.length;
-
-  const revisedResumeCharacterCount =
-    revisedResumeInput.trim().length;
+  const promptCharacterCount =
+    generatedPrompt.length;
 
   const isLongPrompt =
-    promptCharacterCount > LONG_PROMPT_CHARACTER_LIMIT;
+    promptCharacterCount >
+    LONG_PROMPT_CHARACTER_LIMIT;
 
   function handleGeneratePrompt() {
     setCopyStatus(null);
     setGenerationError("");
     setRevisedResumeStatus(null);
 
-    if (!hasResumeText && !hasJobDescriptionText) {
+    if (
+      !hasResumeText &&
+      !hasJobDescriptionText
+    ) {
       setGeneratedPrompt("");
 
       setGenerationError(
@@ -137,11 +145,13 @@ export default function AIResumeCoach({
       return;
     }
 
-    const prompt = buildResumeRewritePrompt({
-      resumeText: resumeText.trim(),
-      jobDescriptionText: jobDescriptionText.trim(),
-      analysis,
-    });
+    const prompt =
+      buildResumeRewritePrompt({
+        resumeText: resumeText.trim(),
+        jobDescriptionText:
+          jobDescriptionText.trim(),
+        analysis,
+      });
 
     if (!prompt.trim()) {
       setGeneratedPrompt("");
@@ -153,7 +163,7 @@ export default function AIResumeCoach({
       return;
     }
 
-    setGeneratedPrompt(prompt.trim());
+    setGeneratedPrompt(prompt);
   }
 
   async function handleCopyPrompt() {
@@ -179,7 +189,7 @@ export default function AIResumeCoach({
       });
     } catch (error) {
       console.error(
-        "Unable to copy resume rewrite prompt:",
+        "Unable to copy prompt:",
         error,
       );
 
@@ -199,15 +209,18 @@ export default function AIResumeCoach({
     );
   }
 
-  function handleRevisedResumeChange(value: string) {
+  function handleRevisedResumeChange(
+    value: string,
+  ) {
     setRevisedResumeInput(value);
     setRevisedResumeStatus(null);
   }
 
   function handleSubmitRevisedResume() {
-    const extractedResume = extractRevisedResume(
-      revisedResumeInput,
-    );
+    const extractedResume =
+      extractRevisedResume(
+        revisedResumeInput,
+      );
 
     if (!extractedResume) {
       setRevisedResumeStatus({
@@ -232,14 +245,18 @@ export default function AIResumeCoach({
       return;
     }
 
-    setRevisedResumeInput(extractedResume);
+    setRevisedResumeInput(
+      extractedResume,
+    );
 
-    onRevisedResumeSubmit(extractedResume);
+    onRevisedResumeSubmit(
+      extractedResume,
+    );
 
     setRevisedResumeStatus({
       type: "success",
       message:
-        "Your revised resume has been saved in CareerLauncher and is ready for the next review step.",
+        "Your revised resume has been saved and automatically validated against the job description.",
     });
   }
 
@@ -252,22 +269,25 @@ export default function AIResumeCoach({
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-violet-700">
-              AI resume coach
+              AI resume rewrite
             </p>
 
             <h2
               id="ai-resume-coach-heading"
               className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl"
             >
-              Rewrite your resume with ChatGPT
+              Rewrite your resume in
+              ChatGPT
             </h2>
 
             <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-              CareerLauncher creates a focused prompt using
-              your original resume, target job description,
-              and match results. ChatGPT will use the prompt
-              to produce a complete rewritten resume for you
-              to review and return to CareerLauncher.
+              CareerLauncher creates a
+              focused prompt using your
+              resume, target job description,
+              and match results. ChatGPT will
+              return a complete rewritten
+              resume that you can paste back
+              here for automatic validation.
             </p>
           </div>
 
@@ -279,22 +299,20 @@ export default function AIResumeCoach({
         {!generatedPrompt ? (
           <div className="mt-8 rounded-3xl border border-violet-200 bg-white p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-slate-950">
-              Generate your resume rewrite prompt
+              Generate your resume
+              rewrite prompt
             </h3>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              The prompt instructs ChatGPT to rewrite your
-              complete resume, improve its alignment with the
-              target role, strengthen its wording, and avoid
-              inventing qualifications, achievements, or
-              experience.
+              The prompt instructs ChatGPT
+              to rewrite your entire resume,
+              improve job relevance and
+              wording, preserve measurable
+              achievements, and avoid
+              inventing qualifications,
+              experience, employers, dates,
+              or results.
             </p>
-
-            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-              ChatGPT will be instructed to return a complete
-              revised resume—not an assessment, a list of
-              suggestions, or a collection of sample bullets.
-            </div>
 
             {!canGeneratePrompt && (
               <div
@@ -322,11 +340,16 @@ export default function AIResumeCoach({
             <button
               type="button"
               disabled={!canGeneratePrompt}
-              onClick={handleGeneratePrompt}
+              onClick={
+                handleGeneratePrompt
+              }
               className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
             >
-              Generate resume rewrite prompt
-              <span aria-hidden="true">→</span>
+              Generate resume rewrite
+              prompt
+              <span aria-hidden="true">
+                →
+              </span>
             </button>
           </div>
         ) : (
@@ -339,14 +362,15 @@ export default function AIResumeCoach({
                   </p>
 
                   <h3 className="mt-1 text-lg font-semibold text-slate-950">
-                    Copy the rewrite prompt into ChatGPT
+                    Copy the rewrite
+                    prompt into ChatGPT
                   </h3>
 
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Copy the complete prompt, open ChatGPT,
-                    paste it into a new conversation, and send
-                    it. ChatGPT should return your complete
-                    rewritten resume.
+                    Review the prompt,
+                    copy it, open ChatGPT,
+                    and paste it into a new
+                    conversation.
                   </p>
                 </div>
 
@@ -359,12 +383,14 @@ export default function AIResumeCoach({
               {copyStatus && (
                 <div
                   role={
-                    copyStatus.type === "error"
+                    copyStatus.type ===
+                    "error"
                       ? "alert"
                       : "status"
                   }
                   className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium ${
-                    copyStatus.type === "success"
+                    copyStatus.type ===
+                    "success"
                       ? "border-teal-200 bg-teal-50 text-teal-800"
                       : "border-red-200 bg-red-50 text-red-700"
                   }`}
@@ -388,11 +414,14 @@ export default function AIResumeCoach({
                   className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900"
                 >
                   <span className="font-semibold">
-                    This is a long prompt.
+                    This is a long
+                    prompt.
                   </span>{" "}
-                  Some AI tools may have input limits.
-                  Consider shortening unnecessary resume
-                  details or the job description before
+                  Some AI tools may have
+                  input limits. Consider
+                  shortening unnecessary
+                  resume details or the job
+                  description before
                   generating it again.
                 </div>
               )}
@@ -408,7 +437,9 @@ export default function AIResumeCoach({
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 <button
                   type="button"
-                  onClick={handleCopyPrompt}
+                  onClick={
+                    handleCopyPrompt
+                  }
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 font-semibold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-700"
                 >
                   <CopyIcon />
@@ -417,7 +448,9 @@ export default function AIResumeCoach({
 
                 <button
                   type="button"
-                  onClick={handleOpenChatGPT}
+                  onClick={
+                    handleOpenChatGPT
+                  }
                   className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-violet-300 bg-white px-5 py-3 font-semibold text-violet-700 transition hover:border-violet-400 hover:bg-violet-50"
                 >
                   Open ChatGPT
@@ -426,7 +459,9 @@ export default function AIResumeCoach({
 
                 <button
                   type="button"
-                  onClick={handleGeneratePrompt}
+                  onClick={
+                    handleGeneratePrompt
+                  }
                   className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Regenerate prompt
@@ -434,10 +469,12 @@ export default function AIResumeCoach({
               </div>
 
               <p className="mt-4 text-sm leading-6 text-slate-600">
-                Copy the prompt before opening ChatGPT.
-                Browser security prevents CareerLauncher
-                from automatically transferring it to another
-                website.
+                Copy the prompt before
+                opening ChatGPT. Browser
+                security prevents
+                CareerLauncher from
+                automatically transferring
+                it to another website.
               </p>
 
               <div className="mt-6">
@@ -451,95 +488,103 @@ export default function AIResumeCoach({
               </p>
 
               <h3 className="mt-1 text-xl font-semibold text-slate-950">
-                Return with your revised resume
+                Return with your revised
+                resume
               </h3>
 
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                When ChatGPT finishes, copy its complete
-                response and paste it below. CareerLauncher
-                will automatically extract the complete resume
-                placed between the revised-resume markers.
+                ChatGPT should return a
+                complete rewritten resume.
+                Copy its response and paste
+                it below. You may paste the
+                full response—CareerLauncher
+                will automatically extract
+                the content placed between
+                the revised-resume markers.
               </p>
 
               <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-                You may paste the entire ChatGPT response,
-                including the revision notes. Only the resume
-                between{" "}
-                <span className="font-semibold">
-                  REVISED RESUME START
-                </span>{" "}
-                and{" "}
-                <span className="font-semibold">
-                  REVISED RESUME END
-                </span>{" "}
-                will be saved.
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-                <span className="font-semibold">
-                  Review before saving:
-                </span>{" "}
-                Remove or correct anything that is inaccurate,
-                exaggerated, or unsupported by your actual
-                education, experience, skills, or achievements.
+                Before continuing, read the
+                revised resume carefully.
+                Remove or correct anything
+                that is inaccurate,
+                exaggerated, or unsupported
+                by your real experience.
               </div>
 
               <label
                 htmlFor="revised-resume"
                 className="mt-6 block text-sm font-semibold text-slate-900"
               >
-                Revised resume from ChatGPT
+                Revised resume
               </label>
 
               <textarea
                 id="revised-resume"
-                value={revisedResumeInput}
+                value={
+                  revisedResumeInput
+                }
                 onChange={(event) =>
                   handleRevisedResumeChange(
                     event.target.value,
                   )
                 }
                 spellCheck
-                placeholder="Paste ChatGPT's complete response or the revised resume here..."
+                placeholder="Paste the complete revised resume from ChatGPT here..."
                 className="mt-2 min-h-[420px] w-full resize-y rounded-3xl border border-slate-300 bg-white p-4 text-sm leading-6 text-slate-800 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 sm:p-5"
               />
 
               <div className="mt-3 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
                 <span>
-                  {revisedResumeCharacterCount.toLocaleString()}{" "}
+                  {revisedResumeInput
+                    .trim()
+                    .length.toLocaleString()}{" "}
                   characters
                 </span>
 
                 <span>
-                  Minimum required length:{" "}
-                  {MINIMUM_REVISED_RESUME_LENGTH} characters
+                  Minimum recommended
+                  length:{" "}
+                  {
+                    MINIMUM_REVISED_RESUME_LENGTH
+                  }{" "}
+                  characters
                 </span>
               </div>
 
               {revisedResumeStatus && (
                 <div
                   role={
-                    revisedResumeStatus.type === "error"
+                    revisedResumeStatus.type ===
+                    "error"
                       ? "alert"
                       : "status"
                   }
                   className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-medium leading-6 ${
-                    revisedResumeStatus.type === "success"
+                    revisedResumeStatus.type ===
+                    "success"
                       ? "border-teal-200 bg-teal-50 text-teal-800"
                       : "border-red-200 bg-red-50 text-red-700"
                   }`}
                 >
-                  {revisedResumeStatus.message}
+                  {
+                    revisedResumeStatus.message
+                  }
                 </div>
               )}
 
               <button
                 type="button"
-                onClick={handleSubmitRevisedResume}
+                onClick={
+                  handleSubmitRevisedResume
+                }
                 className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 sm:w-auto"
               >
-                Save revised resume
-                <span aria-hidden="true">→</span>
+                Save and validate revised
+                resume
+                <span aria-hidden="true">
+                  →
+                </span>
               </button>
             </div>
           </div>
@@ -583,7 +628,9 @@ function ExternalLinkIcon() {
       strokeWidth="1.8"
     >
       <path d="M14 5h5v5" />
+
       <path d="m19 5-8 8" />
+
       <path d="M17 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h5" />
     </svg>
   );
