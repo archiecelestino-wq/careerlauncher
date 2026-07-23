@@ -1,0 +1,62 @@
+export const TECHNOLOGIES = [
+  "aws",
+  "azure",
+  "chatgpt",
+  "docker",
+  "excel",
+  "figma",
+  "github",
+  "jira",
+  "kubernetes",
+  "power bi",
+  "python",
+  "react",
+  "salesforce",
+  "sap",
+  "sql",
+  "tableau",
+  "typescript",
+];
+
+export const BUSINESS_SKILLS = [
+  "account management",
+  "business analysis",
+  "business development",
+  "change management",
+  "client relationship management",
+  "customer relationship management",
+  "customer success",
+  "data analysis",
+  "digital transformation",
+  "financial analysis",
+  "lead generation",
+  "people management",
+  "performance management",
+  "pipeline management",
+  "process improvement",
+  "product management",
+  "project management",
+  "relationship management",
+  "revenue forecasting",
+  "risk management",
+  "sales operations",
+  "stakeholder management",
+  "strategic planning",
+  "team leadership",
+];
+
+export const METHODOLOGIES = [
+  "agile",
+  "kanban",
+  "lean",
+  "scrum",
+  "waterfall",
+];
+
+export const CERTIFICATIONS = [
+  "aws certified",
+  "csm",
+  "itil",
+  "pmp",
+  "six sigma",
+];
